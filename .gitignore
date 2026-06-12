@@ -1,0 +1,12 @@
+.env
+*.env
+__pycache__/
+*.pyc
+node_modules/
+.next/
+*.log
+docker-data/
+
+backend/data/scrape_progress.json
+backend/data/acts_full.json
+backend/data/

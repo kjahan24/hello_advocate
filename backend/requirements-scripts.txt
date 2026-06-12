@@ -1,0 +1,18 @@
+# Dependencies for backend/scripts/ only — NOT installed in the Docker image.
+# Install locally or in a separate venv when running ingestion/embedding scripts:
+#   pip install -r requirements-scripts.txt
+
+# Local embedding model (pulls PyTorch ~700 MB)
+sentence-transformers==3.3.1
+
+# HuggingFace dataset download
+datasets==2.21.0
+huggingface-hub==0.26.2
+pyarrow==18.1.0
+pandas>=2.0.0
+requests>=2.28.0
+tqdm==4.67.1
+
+# BD Laws scraping
+beautifulsoup4==4.12.3
+lxml==5.3.0

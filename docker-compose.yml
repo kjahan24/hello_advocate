@@ -1,0 +1,132 @@
+# AI Lawyer — Bangladesh Legal SaaS
+# Usage:
+#   docker compose up -d            ← start all (dev mode via override.yml)
+#   docker compose up -d --build    ← rebuild images first
+#   docker compose logs -f backend  ← tail a service
+#   docker compose down -v          ← stop and wipe volumes
+
+name: ai-lawyer
+
+services:
+
+  # ── PostgreSQL 16 + pgvector ───────────────────────────────────────────────
+  postgres:
+    image: pgvector/pgvector:pg16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER:     ${POSTGRES_USER:-ailawyer}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
+      POSTGRES_DB:       ${POSTGRES_DB:-ai_lawyer}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-ailawyer} -d ${POSTGRES_DB:-ai_lawyer}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  # ── Redis 7 ───────────────────────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # ── Alembic migration runner (runs once, exits) ────────────────────────────
+  migrate:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    command: alembic upgrade head
+    restart: "no"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-ailawyer}:${POSTGRES_PASSWORD:-changeme}@postgres:5432/${POSTGRES_DB:-ai_lawyer}
+
+  # ── FastAPI backend ────────────────────────────────────────────────────────
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+    environment:
+      DATABASE_URL:           postgresql+asyncpg://${POSTGRES_USER:-ailawyer}:${POSTGRES_PASSWORD:-changeme}@postgres:5432/${POSTGRES_DB:-ai_lawyer}
+      REDIS_URL:              redis://redis:6379
+      ANTHROPIC_API_KEY:      ${ANTHROPIC_API_KEY:?ANTHROPIC_API_KEY is required}
+      OPENAI_API_KEY:         ${OPENAI_API_KEY:?OPENAI_API_KEY is required}
+      NEXTAUTH_SECRET:        ${NEXTAUTH_SECRET:-dev-secret-change-in-production}
+      JWT_SECRET:             ${JWT_SECRET:-dev-jwt-secret-change-in-production}
+      CORS_ORIGINS:           ${CORS_ORIGINS:-http://localhost:3000}
+      AWS_ACCESS_KEY_ID:      ${AWS_ACCESS_KEY_ID:-}
+      AWS_SECRET_ACCESS_KEY:  ${AWS_SECRET_ACCESS_KEY:-}
+      AWS_S3_BUCKET:          ${AWS_S3_BUCKET:-ai-lawyer-docs}
+      SENTRY_DSN:             ${SENTRY_DSN:-}
+      DEBUG:                  ${DEBUG:-false}
+    ports:
+      - "${BACKEND_PORT:-8000}:8000"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8000/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+  # ── Celery worker — background tasks (Phase 2, uncomment when ready) ───────
+  # celery-worker:
+  #   build:
+  #     context: ./backend
+  #     dockerfile: Dockerfile
+  #   command: celery -A app.celery_app worker --loglevel=info --concurrency=2
+  #   restart: unless-stopped
+  #   depends_on:
+  #     migrate:
+  #       condition: service_completed_successfully
+  #     redis:
+  #       condition: service_healthy
+  #   environment:
+  #     DATABASE_URL:      postgresql+asyncpg://${POSTGRES_USER:-ailawyer}:${POSTGRES_PASSWORD:-changeme}@postgres:5432/${POSTGRES_DB:-ai_lawyer}
+  #     REDIS_URL:         redis://redis:6379
+  #     ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+  #     OPENAI_API_KEY:    ${OPENAI_API_KEY}
+
+  # ── Next.js frontend ──────────────────────────────────────────────────────
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      target: runner
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8000}
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    environment:
+      NEXTAUTH_URL:         ${NEXTAUTH_URL:-http://localhost:3000}
+      NEXTAUTH_SECRET:      ${NEXTAUTH_SECRET:-dev-secret-change-in-production}
+      GOOGLE_CLIENT_ID:     ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+    ports:
+      - "${FRONTEND_PORT:-3000}:3000"
+
+volumes:
+  postgres_data:
+  redis_data:

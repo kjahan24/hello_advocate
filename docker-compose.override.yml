@@ -1,0 +1,27 @@
+# Development overrides — auto-loaded by `docker compose up`
+# Adds hot reload, volume bind-mounts, and DEBUG mode.
+# Do NOT commit .env with real secrets.
+
+services:
+
+  backend:
+    # Override prod command with --reload for hot reload
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    volumes:
+      - ./backend:/app
+      # Prevent host __pycache__ from shadowing the container's
+      - /app/__pycache__
+    environment:
+      DEBUG: "true"
+
+  frontend:
+    build:
+      # Switch to the dev stage (npm run dev, no standalone build)
+      target: dev
+    volumes:
+      - ./frontend:/app
+      # Preserve container's node_modules and .next cache
+      - /app/node_modules
+      - /app/.next
+    environment:
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8000}

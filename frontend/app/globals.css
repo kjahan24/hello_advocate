@@ -1,0 +1,100 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background:    0 0% 100%;
+    --foreground:    222.2 84% 4.9%;
+    --muted:         210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --border:        214.3 31.8% 91.4%;
+    --input:         214.3 31.8% 91.4%;
+    --ring:          160 84% 39%;
+    --radius:        0.5rem;
+  }
+
+  .dark {
+    --background:    222.2 84% 4.9%;
+    --foreground:    210 40% 98%;
+    --muted:         217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+    --border:        217.2 32.6% 17.5%;
+    --input:         217.2 32.6% 17.5%;
+    --ring:          160 84% 39%;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-white text-slate-900 antialiased;
+  }
+
+  /* Bengali text renders better with this */
+  [lang="bn"],
+  .font-bengali {
+    font-family: var(--font-noto-bn), 'Noto Sans Bengali', sans-serif;
+    line-height: 1.8;
+  }
+}
+
+@layer utilities {
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: #059669 transparent;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 5px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background-color: #059669;
+    border-radius: 9999px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    background-color: #047857;
+  }
+
+  /* Global green scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background-color: #d1fae5;
+    border-radius: 9999px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background-color: #6ee7b7;
+  }
+
+  /* Accessible focus rings */
+  *:focus-visible {
+    outline: 2px solid #059669;
+    outline-offset: 2px;
+  }
+
+  /* Streaming cursor */
+  .cursor-blink::after {
+    content: '▊';
+    @apply animate-blink text-brand-600 ml-0.5;
+  }
+}
