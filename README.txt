@@ -1,8 +1,10 @@
 
-
+----------------------------------------------------------------------------------------------------------
+Project Review Video: https://drive.google.com/file/d/1E20r_DpHenkQ4_VT40ZX_CcCfTZP10mq/view?usp=sharing
+----------------------------------------------------------------------------------------------------------
 
 # হ্যালো এ্যাডভকেট (Hello Advocate)
-### Bangladesh's First AI-Powered Legal SaaS Platform
+### AI-Powered Legal SaaS Platform
 
 ---
 
@@ -129,8 +131,10 @@ The platform uses 1,609 Bangladesh laws and 46,868 sections scraped from [bdlaws
 ## License
 
 This project was built as part of an AI SaaS development course.
-```
 
-GitHub-এ **"Add a README"** click করুন → সব paste করুন → **"Commit changes"** click করুন! 😊                                           
+-----------------------------------------------------------------
+
+
+                                        
 
 
