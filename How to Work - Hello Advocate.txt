@@ -1,0 +1,65 @@
+                                            হ্যালো এ্যাডভকেট
+                                    AI-Powered Legal SaaS Platform
+
+
+কীভাবে কাজ করে: 
+একজন user platform-এ আসে, বাংলা বা English-এ একটি আইনি প্রশ্ন type করে, এবং AI সঙ্গে সঙ্গে ১,৬০০+ বাংলাদেশের আইন থেকে hybrid RAG retrieval ব্যবহার করে উত্তর খোঁজে, cited sections সহ structured legal answer stream করে, এবং প্রয়োজনে specialized tools (deadline calculator, court finder, document analyzer) automatically invoke করে response সম্পূর্ণ করে। Users documents বা images upload করতে পারে AI-powered legal review-এর জন্য, court cases track করতে পারে automated email reminders সহ, এবং verified lawyers-এর সাথে connect করতে পারে — সব একটি platform-এ।
+
+১. Application কোন সমস্যা সমাধান করে?
+বাংলাদেশের অধিকাংশ নাগরিক প্রতিটি আইনি প্রশ্নের জন্য lawyer afford করতে পারেন না। আইনি তথ্য ১,৬০০+ acts এবং ordinances-এ ছড়িয়ে আছে, জটিল আইনি ভাষায় লেখা, এবং সাধারণ মানুষের কাছে সহজলভ্য নয়। Hello Advocate এটি সমাধান করে instant, accurate, বাংলা ভাষায় AI-powered legal guidance প্রদান করে — ২৪/৭ available, professional consultation-এর তুলনায় অনেক কম খরচে।
+
+২. Target users কারা?
+সাধারণ নাগরিক যারা জমির বিরোধ, পারিবারিক আইন, বা শ্রম অধিকারের প্রশ্নে পড়েছেন; small business owners যাদের contract এবং compliance guidance দরকার; law students যারা বাংলাদেশের statutes research করছেন; এবং NGOs যারা rural areas-এ legal aid প্রদান করছে। Platform বাংলা এবং English — দুটি ভাষায় Free এবং Pro subscription tier-এ serve করে, এবং verified law students-এর জন্য একটি dedicated free plan আছে।
+
+৩. AI chatbot কীভাবে কাজ করে?
+Chatbot core LLM হিসেবে Claude claude-opus-4-5 ব্যবহার করে Server-Sent Events (SSE) streaming-এর সাথে, যাতে responses real-time-এ word-by-word দেখা যায়। একটি intent detector প্রতিটি query-কে ৯টি legal intent (আইন খোঁজা, অধিকার ব্যাখ্যা, প্রক্রিয়া যাচাই ইত্যাদি) এবং ১২টি legal category-তে classify করে। একটি query router তারপর সেরা retrieval strategy নির্বাচন করে। Chatbot user-এর selected language (বাংলা বা English) backend-এ pass করে যাতে Claude সঠিক ভাষায় respond করে।
+
+৪. RAG কোথায় এবং কীভাবে ব্যবহার হয়?
+Platform vector similarity search এবং full-text search মিলিয়ে একটি hybrid RAG pipeline ব্যবহার করে। বাংলাদেশের আইনের সব ৪৬,৮৬৮টি section OpenAI-এর text-embedding-3-small model দিয়ে embed করা এবং PostgreSQL-এ pgvector সহ store করা। কোনো query আসলে system একটি Bengali legal synonym map দিয়ে সেটি expand করে (যেমন "জমি" → "ভূমি, land, property"), vector search (top 20) এবং keyword ILIKE search (top 20) একসাথে চালায়, তারপর Reciprocal Rank Fusion (RRF) scoring দিয়ে results merge করে। Top 5 re-ranked sections system prompt-এ context হিসেবে inject হয়। Streaming শেষে sources আলাদা SSE event হিসেবে পাঠানো হয় এবং chat UI-তে collapsible citation badges হিসেবে দেখানো হয়।
+
+    RAG শুধুমাত্র Chat system-এ ব্যবহার হয়েছে:
+১. /chat — Main Legal Chatbot
+User বাংলা বা English-এ আইনি প্রশ্ন করলে RAG pipeline চলে। Database থেকে relevant law sections খুঁজে এনে AI-কে context হিসেবে দেওয়া হয়, তারপর AI সেই context পড়ে cited উত্তর দেয়।
+২. /agent — AI Agent
+Agent-এর search_laws এবং get_law_details tools-এ RAG-এর একটি অংশ ব্যবহার হয় — database থেকে relevant sections খুঁজে আনা হয়। তবে এখানে full hybrid RAG pipeline-এর বদলে tool-based direct DB query বেশি।
+
+    RAG তিনটি কাজ করেছে:
+১. সঠিক আইন খুঁজে দেওয়া
+৪৬,৮৬৮টি law section-এর মধ্য থেকে user-এর প্রশ্নের সাথে সবচেয়ে relevant ৫টি section বের করে এনেছে।
+২. AI-কে context দেওয়া
+AI নিজের training data থেকে উত্তর না দিয়ে, database থেকে আনা real Bangladesh law-এর উপর ভিত্তি করে উত্তর দিয়েছে।
+৩. Citation সম্ভব করেছে
+RAG ছাড়া AI কোনো specific ধারা cite করতে পারত না। RAG-এর কারণেই response-এর নিচে "📚 উৎস — দণ্ডবিধি ধারা ৩৭৯" এর মতো verified citations দেখানো সম্ভব হয়েছে।
+
+৫. AI কীভাবে live database data query করে?
+/agent page-এ AI নিজে সিদ্ধান্ত নেয় কোন tool ব্যবহার করবে এবং database থেকে কী data আনবে। প্রয়োজনে একাধিক tool একের পর এক call করে, সব result একসাথে নিয়ে তা…/agent page-এ AI নিজে সিদ্ধান্ত নেয় কোন tool ব্যবহার করবে এবং database থেকে কী data আনবে। প্রয়োজনে একাধিক tool একের পর এক call করে, সব result একসাথে নিয়ে তারপর final উত্তর তৈরি করে। সব data live PostgreSQL database থেকে আসে — কোনো pre-stored বা static data নেই।
+
+Project-এ দুটি উপায়ে Query হয়েছে: 
+
+পদ্ধতি ১ — RAG Pipeline (Chat-এ)
+এখানে AI সরাসরি database query করে না। বরং:
+
+User প্রশ্ন করে
+Backend database query করে relevant sections খুঁজে আনে
+সেই sections AI-কে context হিসেবে দেওয়া হয়
+AI context পড়ে উত্তর দেয়
+
+অর্থাৎ /chat-এ AI নিজে query করে না — backend তার হয়ে করে।
+
+পদ্ধতি ২ — Agent Tool Calling (/agent-এ)
+এখানে AI নিজে সিদ্ধান্ত নেয় কোন tool call করবে এবং কী query করবে। এটিই true "live database query by AI।"
+
+
+৬. Vision AI কীভাবে ব্যবহার হয়?
+Document Assistant page-এ দুটি tab আছে। প্রথম tab PDF এবং DOCX files handle করে — pypdf এবং python-docx দিয়ে text extract করে Claude-এ legal analysis-এর জন্য পাঠায়। দ্বিতীয় tab — Image Analysis — JPG, PNG, এবং WEBP uploads (সর্বোচ্চ ৫ MB) accept করে, base64-encode করে, এবং Claude claude-opus-4-5-এ vision content block হিসেবে পাঠায়। Claude document type identify করে (court notice, contract, land deed, legal form, বা ID document) এবং extracted key information, চিহ্নিত risks, এবং recommended next steps সহ একটি structured বাংলা বা English legal analysis return করে।
+
+৭. AI কোন tools এবং functions call করতে পারে?
+AI Agent-এ Anthropic-এর tool-use API-তে ৬টি tool registered আছে:
+Toolকী করেsearch_lawsPostgreSQL-এ ৪৬,৮৬৮টি law section-এ semantic searchget_law_detailsএকটি নির্দিষ্ট Bangladesh act-এর full metadata return করেsearch_legal_templatesCategory অনুযায়ী relevant document templates খুঁজে দেয়calculate_legal_deadlineবাংলাদেশের আইন অনুযায়ী deadlines calculate করেget_court_info৮ ধরনের আদালতের jurisdiction, location এবং filing fees দেয়check_legal_eligibilityBail, appeal, বা legal aid eligibility যাচাই করে
+
+৮. Platform-এ কোন SaaS features আছে?
+Platform একটি full-featured SaaS product — user authentication (JWT-based), তিনটি subscription tier (Free / Pro ৳৪৯৯/মাস / Law Student বিনামূল্যে), SSLCommerz payment integration bKash এবং Nagad support সহ, user dashboard যেখানে chat history এবং document usage track হয়, lawyer referral marketplace, court case tracker with date reminders, user এবং revenue management-এর জন্য admin panel, তিনটি পত্রিকা থেকে Redis caching সহ Bengali legal news feed, multi-language UI (বাংলা/English toggle), এবং সব pages-এ mobile-responsive design.
+
+
+
+
